@@ -1,6 +1,7 @@
 const SCRIPT_URL_KEY = 'gas_script_url';
+const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzAa6yvvb7_uzLCQJIVZRvYm1og6cutHzq0jk8DtlBfT91WAbXpFl54RrMuLhhYT-M83g/exec';
 
-let scriptUrl = localStorage.getItem(SCRIPT_URL_KEY) || '';
+let scriptUrl = localStorage.getItem(SCRIPT_URL_KEY) || DEFAULT_SCRIPT_URL;
 let entries = [];
 
 // DOM refs
