@@ -1,6 +1,6 @@
 // ===================================================================
 // Google Apps Script – מעקב תשלומים
-// הוראות פריסה: ראה README בתחתית הקובץ
+// כל הבקשות מגיעות דרך doGet עם URL params (ללא בעיות CORS)
 // ===================================================================
 
 const SHEET_NAME = 'תשלומים';
@@ -13,7 +13,6 @@ function getSheet() {
     sheet = ss.insertSheet(SHEET_NAME);
     sheet.appendRow(HEADERS);
     sheet.setFrozenRows(1);
-    // עיצוב כותרות
     const headerRange = sheet.getRange(1, 1, 1, HEADERS.length);
     headerRange.setBackground('#1a1a2e');
     headerRange.setFontColor('#ffffff');
@@ -27,32 +26,19 @@ function getSheet() {
 }
 
 function doGet(e) {
-  return handleRequest(e);
-}
-
-function doPost(e) {
-  return handleRequest(e);
-}
-
-function handleRequest(e) {
   const output = ContentService.createTextOutput();
   output.setMimeType(ContentService.MimeType.JSON);
 
   try {
-    const action = (e.parameter && e.parameter.action) ||
-                   (e.postData ? JSON.parse(e.postData.contents).action : 'getAll');
-    let body = {};
-    if (e.postData) {
-      try { body = JSON.parse(e.postData.contents); } catch (_) {}
-    }
-
+    const action = e.parameter.action || 'getAll';
     let result;
+
     if (action === 'getAll') {
       result = getAllEntries();
     } else if (action === 'add') {
-      result = addEntry(body);
+      result = addEntry(e.parameter.name, Number(e.parameter.amount));
     } else if (action === 'delete') {
-      result = deleteEntry(body.id);
+      result = deleteEntry(e.parameter.id);
     } else {
       result = { error: 'פעולה לא ידועה' };
     }
@@ -74,17 +60,17 @@ function getAllEntries() {
     id: String(row[0]),
     name: row[1],
     amount: Number(row[2]),
-    date: row[3],
+    date: String(row[3]),
   }));
 
   return { entries };
 }
 
-function addEntry(body) {
+function addEntry(name, amount) {
   const sheet = getSheet();
   const id = String(Date.now());
   const date = new Date().toISOString();
-  sheet.appendRow([id, body.name, body.amount, date]);
+  sheet.appendRow([id, name, amount, date]);
   return { success: true, id, date };
 }
 
@@ -100,21 +86,3 @@ function deleteEntry(id) {
   }
   return { error: 'רשומה לא נמצאה' };
 }
-
-/*
-===================================================================
-הוראות פריסה (חד-פעמי):
-===================================================================
-1. פתח Google Sheets חדש: https://sheets.google.com
-2. כלים → Apps Script
-3. מחק את הקוד הקיים, הדבק את כל הקוד מקובץ זה
-4. שמור (Ctrl+S)
-5. פריסה → פריסה חדשה
-   - סוג: Web App
-   - הפעל בתור: אני (Me)
-   - מי יכול לגשת: Anyone  ← חשוב!
-6. לחץ "פרוס", אשר הרשאות
-7. העתק את ה-URL שמתקבל
-8. חזור לאפליקציה → לחץ "הגדרות" → הדבק את ה-URL
-===================================================================
-*/

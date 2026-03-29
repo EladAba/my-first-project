@@ -1,5 +1,5 @@
 const SCRIPT_URL_KEY = 'gas_script_url';
-const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzAa6yvvb7_uzLCQJIVZRvYm1og6cutHzq0jk8DtlBfT91WAbXpFl54RrMuLhhYT-M83g/exec';
+const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzAa6yvvb7_uzLCQJlVZRvYm1og6cutHzq0jk8DtIBfT91WAbXpFl54RrMuLhhYT-M83g/exec';
 
 let scriptUrl = localStorage.getItem(SCRIPT_URL_KEY) || DEFAULT_SCRIPT_URL;
 let entries = [];
@@ -65,15 +65,14 @@ function setStatus(state, message) {
 
 // ── API calls ─────────────────────────────────────────────────────
 
-async function apiCall(body) {
+async function apiCall(params) {
   if (!scriptUrl) {
     setupBanner.classList.remove('hidden');
     throw new Error('אין URL מוגדר');
   }
-  const res = await fetch(scriptUrl, {
-    method: 'POST',
-    body: JSON.stringify(body),
-  });
+  const url = new URL(scriptUrl);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString(), { redirect: 'follow' });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
   if (data.error) throw new Error(data.error);
@@ -106,7 +105,7 @@ form.addEventListener('submit', async (e) => {
   submitBtn.textContent = 'שומר...';
 
   try {
-    const result = await apiCall({ action: 'add', name, amount });
+    const result = await apiCall({ action: 'add', name, amount: String(amount) });
     entries.push({ id: result.id, name, amount, date: result.date });
     renderTable();
     showToast('הרשומה נוספה ונשמרה ב-Google Sheets');
@@ -128,7 +127,7 @@ tableBody.addEventListener('click', async (e) => {
   e.target.disabled = true;
   e.target.textContent = '...';
   try {
-    await apiCall({ action: 'delete', id });
+    await apiCall({ action: 'delete', id: String(id) });
     entries = entries.filter((en) => String(en.id) !== String(id));
     renderTable();
     showToast('הרשומה נמחקה');
